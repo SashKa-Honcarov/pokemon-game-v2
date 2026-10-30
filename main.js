@@ -7,8 +7,7 @@ const character = {
   elName: document.getElementById('name-character'),
   elHealth: document.getElementById('health-character'),
   elProgressbar: document.getElementById('progressbar-character'),
-  
-  // Переносимо renderHP у метод об'єкта
+
   renderHP() {
     this.elHealth.innerText = `${this.damageHP} / ${this.defaultHP} HP | ⚡ ${this.damageAP} / ${this.maxAP} AP`;
 
@@ -24,7 +23,6 @@ const character = {
     }
   },
 
-  // Переносимо changeHP у метод об'єкта
   changeHP(count) {
     this.damageHP -= count;
 
@@ -45,8 +43,7 @@ const enemy = {
   elName: document.getElementById('name-enemy'),
   elHealth: document.getElementById('health-enemy'),
   elProgressbar: document.getElementById('progressbar-enemy'),
-  
-  // Той самий метод renderHP для ворога
+
   renderHP() {
     this.elHealth.innerText = `${this.damageHP} / ${this.defaultHP} HP | ⚡ ${this.damageAP} / ${this.maxAP} AP`;
 
@@ -62,7 +59,6 @@ const enemy = {
     }
   },
 
-  // Той самий метод changeHP для ворога
   changeHP(count) {
     this.damageHP -= count;
 
@@ -84,6 +80,27 @@ function getRandom(max) {
   return Math.floor(Math.random() * max) + 1;
 }
 
+function generateLog(firstPerson, secondPerson, count) {
+  const { name: name1 } = firstPerson;
+  const { name: name2, damageHP, defaultHP } = secondPerson;
+
+  const logs = [
+    `[${name1}] згадав щось важливе, але несподівано [${name2}], не пам'ятаючи себе від переляку, вдарив у передпліччя ворога. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] поперхнувся, і за це [${name2}] з переляку приклав прямий удар коліном у лоб ворога. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] забувся, але в цей час наглий [${name2}], прийнявши вольове рішення, непомітно підійшовши ззаду, вдарив. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] прийшов до тями, але несподівано [${name2}] випадково завдав найпотужнішого удару. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] поперхнувся, але в цей час [${name2}] неохоче роздробив кулаком супротивника. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] здивувався, а [${name2}], похитнувшись, вліпив підлий удар. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] висморкався, але несподівано [${name2}] провів дрібний удар. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] похитнувся, і раптом наглий [${name2}] безпричинно вдарив у ногу супротивника. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] засмутився, як раптом, несподівано [${name2}] випадково вліпив стопою в живіт суперника. -${count} [${damageHP}/${defaultHP}]`,
+    `[${name1}] намагався щось сказати, але раптом, несподівано [${name2}] з нудьги розбив брову супернику. -${count} [${damageHP}/${defaultHP}]`
+  ];
+
+  const randomIndex = getRandom(logs.length) - 1;
+  return logs[randomIndex];
+}
+
 function checkWinner() {
   if (character.damageHP === 0 || enemy.damageHP === 0) {
     btnKick.disabled = true;
@@ -103,15 +120,17 @@ function checkWinner() {
 
 const btnKick = document.getElementById('btn-kick');
 const btnSuperKick = document.getElementById('btn-super-kick');
+const $logs = document.querySelector('#logs');
 
 function makeMove(isSuperAttack) {
   const attacker = isCharacterTurn ? character : enemy;
   const target = isCharacterTurn ? enemy : character;
 
   const cost = isSuperAttack ? SUPER_ATTACK_COST : REGULAR_ATTACK_COST;
+  const { damageAP } = attacker; 
 
-  if (attacker.damageAP < cost) {
-    alert(`Недостатньо енергії для ${isSuperAttack ? 'Супер-атаки' : 'Атаки'}! Потрібно ${cost} AP, а є лише ${attacker.damageAP} AP.`);
+  if (damageAP < cost) {
+    alert(`Недостатньо енергії для ${isSuperAttack ? 'Супер-атаки' : 'Атаки'}! Потрібно ${cost} AP, а є лише ${damageAP} AP.`);
     return;
   }
 
@@ -119,8 +138,14 @@ function makeMove(isSuperAttack) {
 
   const damage = isSuperAttack ? (getRandom(20) + 15) : getRandom(20);
 
-  // Викликаємо метод changeHP у цілі через контекст об'єкта
   target.changeHP(damage);
+
+  const logText = generateLog(attacker, target, damage);
+  const $p = document.createElement('p');
+  $p.innerText = logText;
+  if ($logs) {
+    $logs.insertBefore($p, $logs.children[0]);
+  }
 
   if (checkWinner()) return;
 
@@ -133,7 +158,6 @@ function makeMove(isSuperAttack) {
     nextAttacker.damageAP = nextAttacker.maxAP;
   }
 
-  // Викликаємо методи оновлення здоров'я для обох об'єктів
   character.renderHP();
   enemy.renderHP();
   updateTurnUI();
@@ -162,7 +186,6 @@ function init() {
   if (character.elName) character.elName.innerText = character.name;
   if (enemy.elName) enemy.elName.innerText = enemy.name;
 
-  // Викликаємо методи рендеру при ініціалізації
   character.renderHP();
   enemy.renderHP();
   updateTurnUI();
