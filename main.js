@@ -1,3 +1,29 @@
+// Загальні методи для персонажів
+function renderHP() {
+  this.elHealth.innerText = `${this.damageHP} / ${this.defaultHP} HP | ⚡ ${this.damageAP} / ${this.maxAP} AP`;
+
+  const percent = (this.damageHP / this.defaultHP) * 100;
+  this.elProgressbar.style.width = percent + '%';
+
+  if (percent > 60) {
+    this.elProgressbar.style.backgroundColor = '#2ecc71';
+  } else if (percent > 20) {
+    this.elProgressbar.style.backgroundColor = '#f1c40f';
+  } else {
+    this.elProgressbar.style.backgroundColor = '#e74c3c';
+  }
+}
+
+function changeHP(count) {
+  this.damageHP -= count;
+
+  if (this.damageHP <= 0) {
+    this.damageHP = 0;
+  }
+
+  this.renderHP();
+}
+
 const character = {
   name: 'Pikachu',
   defaultHP: 100,
@@ -7,31 +33,8 @@ const character = {
   elName: document.getElementById('name-character'),
   elHealth: document.getElementById('health-character'),
   elProgressbar: document.getElementById('progressbar-character'),
-
-  renderHP() {
-    this.elHealth.innerText = `${this.damageHP} / ${this.defaultHP} HP | ⚡ ${this.damageAP} / ${this.maxAP} AP`;
-
-    const percent = (this.damageHP / this.defaultHP) * 100;
-    this.elProgressbar.style.width = percent + '%';
-
-    if (percent > 60) {
-      this.elProgressbar.style.backgroundColor = '#2ecc71';
-    } else if (percent > 20) {
-      this.elProgressbar.style.backgroundColor = '#f1c40f';
-    } else {
-      this.elProgressbar.style.backgroundColor = '#e74c3c';
-    }
-  },
-
-  changeHP(count) {
-    this.damageHP -= count;
-
-    if (this.damageHP <= 0) {
-      this.damageHP = 0;
-    }
-
-    this.renderHP();
-  }
+  renderHP,
+  changeHP
 };
 
 const enemy = {
@@ -43,31 +46,8 @@ const enemy = {
   elName: document.getElementById('name-enemy'),
   elHealth: document.getElementById('health-enemy'),
   elProgressbar: document.getElementById('progressbar-enemy'),
-
-  renderHP() {
-    this.elHealth.innerText = `${this.damageHP} / ${this.defaultHP} HP | ⚡ ${this.damageAP} / ${this.maxAP} AP`;
-
-    const percent = (this.damageHP / this.defaultHP) * 100;
-    this.elProgressbar.style.width = percent + '%';
-
-    if (percent > 60) {
-      this.elProgressbar.style.backgroundColor = '#2ecc71';
-    } else if (percent > 20) {
-      this.elProgressbar.style.backgroundColor = '#f1c40f';
-    } else {
-      this.elProgressbar.style.backgroundColor = '#e74c3c';
-    }
-  },
-
-  changeHP(count) {
-    this.damageHP -= count;
-
-    if (this.damageHP <= 0) {
-      this.damageHP = 0;
-    }
-
-    this.renderHP();
-  }
+  renderHP,
+  changeHP
 };
 
 let isCharacterTurn = true; 
@@ -165,7 +145,7 @@ function makeMove(isSuperAttack) {
 
 function updateTurnUI() {
   const currentAttacker = isCharacterTurn ? character : enemy;
-  
+   
   if (btnSuperKick) {
     btnSuperKick.style.opacity = currentAttacker.damageAP >= SUPER_ATTACK_COST ? '1' : '0.5';
   }
