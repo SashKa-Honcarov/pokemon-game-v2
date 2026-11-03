@@ -110,7 +110,7 @@ function makeMove(isSuperAttack) {
   const { damageAP } = attacker; 
 
   if (damageAP < cost) {
-    alert(`Недостатньо енергії для ${isSuperAttack ? 'Супер-атаки' : 'Атаки'}! Потрібно ${cost} AP, а є лише ${damageAP} AP.`);
+    alert(`Недостатньо енергії для ${isSuperAttack ? 'Супер-атаки' : 'Атаки'}! Потрібно ${cost} енергії, а є лише ${damageAP}.`);
     return;
   }
 
@@ -146,20 +146,64 @@ function makeMove(isSuperAttack) {
 function updateTurnUI() {
   const currentAttacker = isCharacterTurn ? character : enemy;
    
-  if (btnSuperKick) {
+  if (btnSuperKick && !btnSuperKick.disabled) {
     btnSuperKick.style.opacity = currentAttacker.damageAP >= SUPER_ATTACK_COST ? '1' : '0.5';
   }
   btnKick.style.opacity = currentAttacker.damageAP >= REGULAR_ATTACK_COST ? '1' : '0.5';
 }
 
-btnKick.addEventListener('click', function () {
-  makeMove(false);
-});
+
+function createUnlimitedClickHandler(callback) {
+  let count = 0;
+
+  return function () {
+    count++;
+
+    const $p = document.createElement('p');
+    $p.innerText = `👉 [Thunder Jolt] Зроблено кліків: ${count} (безлімітно)`;
+    if ($logs) {
+      $logs.insertBefore($p, $logs.children[0]);
+    }
+
+    callback();
+  };
+}
+
+function createLimitedClickHandler(callback, maxClicks = 2) {
+  let count = 0;
+  const initialText = btnSuperKick ? btnSuperKick.innerText.split(' (')[0] : 'Special Attack';
+
+  return function (event) {
+    count++;
+    const leftClicks = maxClicks - count;
+
+    const $p = document.createElement('p');
+    $p.innerText = `⚡ [Special Attack] Кліків: ${count}. Залишилося натискань: ${Math.max(0, leftClicks)}`;
+    if ($logs) {
+      $logs.insertBefore($p, $logs.children[0]);
+    }
+
+    callback();
+
+    if (count >= maxClicks) {
+      event.currentTarget.disabled = true;
+      event.currentTarget.innerText = `${initialText} (0)`;
+      
+      const $pLimit = document.createElement('p');
+      $pLimit.innerText = `❌ [Special Attack] Ліміт натискань вичерпано! Кнопку заблоковано.`;
+      if ($logs) {
+        $logs.insertBefore($pLimit, $logs.children[0]);
+      }
+    } else {
+      event.currentTarget.innerText = `${initialText} (${leftClicks})`;
+    }
+  };
+}
+
+btnKick.addEventListener('click', createUnlimitedClickHandler(() => makeMove(false)));
 
 if (btnSuperKick) {
-  btnSuperKick.addEventListener('click', function () {
-    makeMove(true);
-  });
+  btnSuperKick.addEventListener('click', createLimitedClickHandler(() => makeMove(true), 2));
 }
 
 function init() {
