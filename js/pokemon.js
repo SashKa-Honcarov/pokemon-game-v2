@@ -3,48 +3,57 @@ class Selectors {
     this.elName = document.getElementById(`name-${selector}`);
     this.elHealth = document.getElementById(`health-${selector}`);
     this.elProgressbar = document.getElementById(`progressbar-${selector}`);
+    this.elImg = document.getElementById(`img-${selector}`);
   }
 }
 
 class Pokemon extends Selectors {
-  constructor({ name, defaultHP = 100, maxAP = 100, selectors }) {
+  constructor({ name, hp, type, selectors, attacks = [], img }) {
     super(selectors);
     this.name = name;
-    this.defaultHP = defaultHP;
-    this.damageHP = defaultHP;
-    this.maxAP = maxAP;
-    this.damageAP = maxAP;
+    this.hp = {
+      current: hp,
+      total: hp,
+    };
+    this.type = type;
+    this.attacks = attacks;
+    this.img = img;
 
     this.init();
   }
 
   renderHP() {
-    this.elHealth.innerText = `${this.damageHP} / ${this.defaultHP} HP | ⚡ ${this.damageAP} / ${this.maxAP} AP`;
+    this.elHealth.innerText = `${this.hp.current} / ${this.hp.total}`;
+    this.renderProgressbarHP();
+  }
 
-    const percent = (this.damageHP / this.defaultHP) * 100;
+  renderProgressbarHP() {
+    const percent = (this.hp.current / this.hp.total) * 100;
     this.elProgressbar.style.width = percent + '%';
 
-    if (percent > 60) {
-      this.elProgressbar.style.backgroundColor = '#2ecc71';
-    } else if (percent > 20) {
-      this.elProgressbar.style.backgroundColor = '#f1c40f';
+    if (percent < 20) {
+      this.elProgressbar.classList.add('critical');
+    } else if (percent < 60) {
+      this.elProgressbar.classList.add('low');
     } else {
-      this.elProgressbar.style.backgroundColor = '#e74c3c';
+      this.elProgressbar.classList.remove('low', 'critical');
     }
   }
 
-  changeHP(count) {
-    this.damageHP -= count;
+  changeHP(count, cb) {
+    this.hp.current -= count;
 
-    if (this.damageHP <= 0) {
-      this.damageHP = 0;
+    if (this.hp.current <= 0) {
+      this.hp.current = 0;
     }
 
     this.renderHP();
+    cb && cb(count);
   }
 
   init() {
     if (this.elName) this.elName.innerText = this.name;
+    if (this.elImg && this.img) this.elImg.src = this.img;
     this.renderHP();
   }
 }

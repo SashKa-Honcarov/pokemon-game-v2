@@ -480,3 +480,40 @@ h1 {
   margin: 10px auto 0;  
   object-fit: contain;  
 }
+
+.control {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.control .button {
+    flex: 1 1 45%;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.control .button:hover {
+    background-color: #e2e8f0;
+}
+
+.control .button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.health.low {
+    background-color: #ffcc00;
+}
+
+.health.critical {
+    background-color: #ff4d4d;
+}

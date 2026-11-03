@@ -1,147 +1,87 @@
 import Pokemon from './pokemon.js';
 import { getRandom, generateLog } from './utils.js';
-import { REGULAR_ATTACK_COST, SUPER_ATTACK_COST, REGEN_AP_PER_TURN } from './constants.js';
+import { pokemons } from './pokemons.js';
 
-const character = new Pokemon({
-  name: 'Pikachu',
-  selectors: 'character'
-});
-
-const enemy = new Pokemon({
-  name: 'Charmander',
-  selectors: 'enemy'
-});
-
-let isCharacterTurn = true;
-
-const btnKick = document.getElementById('btn-kick');
-const btnSuperKick = document.getElementById('btn-super-kick');
+const $control = document.querySelector('.control');
 const $logs = document.querySelector('#logs');
 
-function checkWinner() {
-  if (character.damageHP === 0 || enemy.damageHP === 0) {
-    btnKick.disabled = true;
-    if (btnSuperKick) btnSuperKick.disabled = true;
+let player1, player2;
 
-    if (character.damageHP === 0 && enemy.damageHP === 0) {
-      alert('Нічия!');
-    } else if (character.damageHP === 0) {
-      alert(`Переміг ${enemy.name}!`);
-    } else {
-      alert(`Переміг ${character.name}!`);
-    }
-    return true;
-  }
-  return false;
+function initGame() {
+  const pikachuData = pokemons.find(item => item.name === 'Pikachu');
+  const charmanderData = pokemons.find(item => item.name === 'Charmander');
+
+  player1 = new Pokemon({
+    ...pikachuData,
+    selectors: 'player1'
+  });
+
+  player2 = new Pokemon({
+    ...charmanderData,
+    selectors: 'player2'
+  });
+
+  renderControl();
 }
 
-function makeMove(isSuperAttack) {
-  const attacker = isCharacterTurn ? character : enemy;
-  const target = isCharacterTurn ? enemy : character;
+function renderControl() {
+  $control.innerHTML = '';
 
-  const cost = isSuperAttack ? SUPER_ATTACK_COST : REGULAR_ATTACK_COST;
-  const { damageAP } = attacker; 
+  player1.attacks.forEach(item => {
+    const $btn = document.createElement('button');
+    $btn.classList.add('button');
+    $btn.innerText = `${item.name} (${item.maxCount})`;
+    
+    let count = item.maxCount;
 
-  if (damageAP < cost) {
-    alert(`Недостатньо енергії для ${isSuperAttack ? 'Супер-атаки' : 'Атаки'}! Потрібно ${cost} енергії, а є лише ${damageAP}.`);
-    return;
-  }
-
-  attacker.damageAP -= cost;
-
-  const damage = isSuperAttack ? (getRandom(20) + 15) : getRandom(20);
-
-  target.changeHP(damage);
-
-  const logText = generateLog(attacker, target, damage);
-  const $p = document.createElement('p');
-  $p.innerText = logText;
-  if ($logs) {
-    $logs.insertBefore($p, $logs.children[0]);
-  }
-
-  if (checkWinner()) return;
-
-  isCharacterTurn = !isCharacterTurn;
-
-  const nextAttacker = isCharacterTurn ? character : enemy;
-  nextAttacker.damageAP += REGEN_AP_PER_TURN;
-
-  if (nextAttacker.damageAP > nextAttacker.maxAP) {
-    nextAttacker.damageAP = nextAttacker.maxAP;
-  }
-
-  character.renderHP();
-  enemy.renderHP();
-  updateTurnUI();
-}
-
-function updateTurnUI() {
-  const currentAttacker = isCharacterTurn ? character : enemy;
-   
-  if (btnSuperKick && !btnSuperKick.disabled) {
-    btnSuperKick.style.opacity = currentAttacker.damageAP >= SUPER_ATTACK_COST ? '1' : '0.5';
-  }
-  btnKick.style.opacity = currentAttacker.damageAP >= REGULAR_ATTACK_COST ? '1' : '0.5';
-}
-
-function createUnlimitedClickHandler(callback) {
-  let count = 0;
-
-  return function () {
-    count++;
-
-    const $p = document.createElement('p');
-    $p.innerText = `👉 [Thunder Jolt] Зроблено кліків: ${count} (безлімітно)`;
-    if ($logs) {
-      $logs.insertBefore($p, $logs.children[0]);
-    }
-
-    callback();
-  };
-}
-
-function createLimitedClickHandler(callback, maxClicks = 2) {
-  let count = 0;
-  const initialText = btnSuperKick ? btnSuperKick.innerText.split(' (')[0] : 'Special Attack';
-
-  return function (event) {
-    count++;
-    const leftClicks = maxClicks - count;
-
-    const $p = document.createElement('p');
-    $p.innerText = `⚡ [Special Attack] Кліків: ${count}. Залишилося натискань: ${Math.max(0, leftClicks)}`;
-    if ($logs) {
-      $logs.insertBefore($p, $logs.children[0]);
-    }
-
-    callback();
-
-    if (count >= maxClicks) {
-      event.currentTarget.disabled = true;
-      event.currentTarget.innerText = `${initialText} (0)`;
+    $btn.addEventListener('click', function () {
+      count--;
       
-      const $pLimit = document.createElement('p');
-      $pLimit.innerText = `❌ [Special Attack] Ліміт натискань вичерпано! Кнопку заблоковано.`;
-      if ($logs) {
-        $logs.insertBefore($pLimit, $logs.children[0]);
+      if (count <= 0) {
+        $btn.disabled = true;
+        $btn.innerText = `${item.name} (0)`;
+      } else {
+        $btn.innerText = `${item.name} (${count})`;
       }
-    } else {
-      event.currentTarget.innerText = `${initialText} (${leftClicks})`;
-    }
-  };
+
+      // Удар гравця по противнику
+      const damage = getRandom(item.maxDamage, item.minDamage);
+      player2.changeHP(damage, function (countDamage) {
+        const logText = generateLog(player1, player2, countDamage);
+        const $p = document.createElement('p');
+        $p.innerText = logText;
+        if ($logs) {
+          $logs.insertBefore($p, $logs.children[0]);
+        }
+      });
+
+      // Відповідний удар противника
+      if (player2.hp.current > 0) {
+        const enemyAttack = player2.attacks[getRandom(player2.attacks.length) - 1];
+        const enemyDamage = getRandom(enemyAttack.maxDamage, enemyAttack.minDamage);
+        
+        player1.changeHP(enemyDamage, function (countDamage) {
+          const logText = generateLog(player2, player1, countDamage);
+          const $p = document.createElement('p');
+          $p.innerText = logText;
+          if ($logs) {
+            $logs.insertBefore($p, $logs.children[0]);
+          }
+        });
+      }
+
+      // Перевірка перемоги / поразки та перезапуск гри
+      if (player2.hp.current === 0) {
+        alert(`Переміг ${player1.name}! Нова гра.`);
+        initGame();
+      } else if (player1.hp.current === 0) {
+        alert(`Переміг ${player2.name}! Нова гра.`);
+        initGame();
+      }
+    });
+
+    $control.appendChild($btn);
+  });
 }
 
-btnKick.addEventListener('click', createUnlimitedClickHandler(() => makeMove(false)));
-
-if (btnSuperKick) {
-  btnSuperKick.addEventListener('click', createLimitedClickHandler(() => makeMove(true), 2));
-}
-
-function init() {
-  character.renderHP();
-  enemy.renderHP();
-  updateTurnUI();
-}
-
-init();
+initGame();
